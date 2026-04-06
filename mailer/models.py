@@ -1,6 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
-from django.db.models import JSONField
 
 
 class EmailLog(models.Model):
@@ -14,7 +12,7 @@ class EmailLog(models.Model):
     
     subject = models.CharField(max_length=255)
     message = models.TextField()
-    recipients = JSONField(default=list)  # Multiple emails store করবে
+    recipients = models.JSONField(default=list)  # Multiple emails store করবে
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     sent_count = models.IntegerField(default=0)
     failed_count = models.IntegerField(default=0)
@@ -35,7 +33,7 @@ class ScheduledEmail(models.Model):
     """Scheduled email configuration"""
     
     task_name = models.CharField(max_length=255, unique=True)
-    recipients = JSONField(default=list)
+    recipients = models.JSONField(default=list)
     subject = models.CharField(max_length=255)
     message = models.TextField()
     interval_minutes = models.IntegerField(default=3)
