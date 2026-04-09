@@ -1,3 +1,9 @@
+"""
+Celery tasks for email sending operations.
+
+Provides background task for sending scheduled emails with
+retry logic and comprehensive logging.
+"""
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
@@ -9,12 +15,28 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, max_retries=3)
 def send_scheduled_emails(self, subject, message, recipient_list):
     """
-    প্রতি 3 মিনিট অন্তর multiple emails এ mail পাঠায়
-    Dashboard এ track করা যায়
+    Send emails to multiple recipients as a background task.
+    
+    This task is executed by Celery at scheduled intervals and includes:
+    - Individual email sending to each recipient
+    - Success/failure tracking
+    - Error logging and retry logic
+    - Database logging of all operations
+    
+    Args:
+        subject (str): Email subject line
+        message (str): Email body content
+        recipient_list (list): List of recipient email addresses
+        
+    Returns:
+        dict: Status information including sent/failed counts
+        
+    Raises:
+        Exception: Retries up to 3 times on failure
     """
     from .models import EmailLog
     
-    # Email log entry তৈরি করি
+    # Create email log entry for tracking
     email_log = EmailLog.objects.create(
         subject=subject,
         message=message,
@@ -29,7 +51,7 @@ def send_scheduled_emails(self, subject, message, recipient_list):
     try:
         email_from = settings.EMAIL_HOST_USER
 
-        # প্রতিটি email এ আলাদা mail পাঠাই
+        # Send email to each recipient individually
         for recipient in recipient_list:
             try:
                 send_mail(
@@ -47,7 +69,7 @@ def send_scheduled_emails(self, subject, message, recipient_list):
                 errors.append(error_msg)
                 logger.error(f"❌ {error_msg}")
 
-        # Email log update করি
+        # Update email log with results
         email_log.sent_count = sent_count
         email_log.failed_count = failed_count
         email_log.status = 'sent' if sent_count > 0 else 'failed'
@@ -57,7 +79,7 @@ def send_scheduled_emails(self, subject, message, recipient_list):
 
         return {
             "status": "success",
-            "message": f"Mail {sent_count} জন এর কাছে পাঠানো হয়েছে",
+            "message": f"Email sent to {sent_count} recipient(s)",
             "sent": sent_count,
             "failed": failed_count,
             "recipients": recipient_list,
@@ -68,4 +90,5 @@ def send_scheduled_emails(self, subject, message, recipient_list):
         email_log.error_message = str(exc)
         email_log.save()
         logger.error(f"❌ Error sending email: {exc}")
+        # Retry after 60 seconds
         raise self.retry(exc=exc, countdown=60)

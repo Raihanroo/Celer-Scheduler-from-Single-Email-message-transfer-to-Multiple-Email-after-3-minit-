@@ -1,5 +1,13 @@
 """
-Email Status Checker - কোথায় সমস্যা হচ্ছে তা খুঁজে বের করুন
+Email Configuration and Status Checker
+
+This utility script helps diagnose email sending issues by:
+1. Verifying email configuration settings
+2. Testing SMTP connection
+3. Sending a test email
+
+Run this script to ensure your email setup is working correctly
+before using the main application.
 """
 
 import os
@@ -64,16 +72,16 @@ try:
     send_mail(
         subject="✅ Test Email - Django Email Scheduler",
         message="""
-এটি একটি test email।
+This is a test email from Django Email Scheduler.
 
-যদি আপনি এই mail পান তাহলে বুঝবেন:
-✅ Email configuration সঠিক
-✅ Gmail connection কাজ করছে
-✅ System ready
+If you receive this email, it means:
+✅ Email configuration is correct
+✅ Gmail connection is working
+✅ System is ready to send emails
 
-এখন UI থেকে email পাঠাতে পারবেন।
+You can now send emails from the web UI.
 
-ধন্যবাদ!
+Thank you!
         """,
         from_email=settings.EMAIL_HOST_USER,
         recipient_list=[test_email],

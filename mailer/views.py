@@ -1,3 +1,12 @@
+"""
+API views for email sending and scheduling operations.
+
+Provides endpoints for:
+- Displaying email form UI
+- Sending immediate emails
+- Scheduling recurring emails
+- Viewing email history and scheduled tasks
+"""
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,47 +20,59 @@ from datetime import datetime
 
 class EmailFormView(TemplateView):
     """
-    HTML UI দিয়ে email পাঠানোর form
+    Renders the email form UI for sending emails.
+    
+    Provides a user-friendly interface with email tag system
+    for adding multiple recipients and sending emails.
     """
     template_name = 'mailer/email_form.html'
 
 
 class ScheduleEmailView(APIView):
     """
-    Multiple emails এ scheduled mail পাঠানোর জন্য API
+    API endpoint for scheduling recurring emails to multiple recipients.
+    
+    Creates a scheduled task that will send emails at specified intervals
+    using the management command or Celery (if configured).
+    
+    Request body:
+        - emails: List of recipient email addresses
+        - subject: Email subject line
+        - message: Email body content
+        - interval_minutes: Time interval between sends (default: 3)
     """
     
     def post(self, request):
-        # User থেকে data নেওয়া
+        # Extract data from request
         recipient_list = request.data.get("emails", [])
         subject = request.data.get("subject", "Scheduled Task Mail")
-        message = request.data.get("message", "Ei mail-ti proti 3 minute por por jabe.")
+        message = request.data.get("message", "This email will be sent at regular intervals.")
         interval_minutes = request.data.get("interval_minutes", 3)
 
-        # Validation
+        # Validate input
         if not recipient_list or not isinstance(recipient_list, list):
             return Response(
-                {"error": "Email list প্রয়োজন (array format এ)"},
+                {"error": "Email list is required (must be an array)"},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         if not subject or not message:
             return Response(
-                {"error": "Subject এবং message প্রয়োজন"},
+                {"error": "Subject and message are required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
-            # Interval schedule তৈরি
+            # Create interval schedule
             schedule, created = IntervalSchedule.objects.get_or_create(
                 every=interval_minutes,
                 period=IntervalSchedule.MINUTES,
             )
 
-            # Unique task name তৈরি
+            # Generate unique task name
             task_name = f"Email_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-            # Scheduled email database এ save করি
+            # Save scheduled email to database
             scheduled_email = ScheduledEmail.objects.create(
                 task_name=task_name,
                 recipients=recipient_list,
@@ -60,7 +81,7 @@ class ScheduleEmailView(APIView):
                 interval_minutes=interval_minutes,
             )
 
-            # Periodic task তৈরি
+            # Create periodic task for Celery
             PeriodicTask.objects.create(
                 interval=schedule,
                 name=task_name,
@@ -70,7 +91,7 @@ class ScheduleEmailView(APIView):
 
             return Response({
                 "status": "success",
-                "message": f"Email scheduler চালু হয়েছে! প্রতি {interval_minutes} মিনিট পর mail যাবে।",
+                "message": f"Email scheduler activated! Emails will be sent every {interval_minutes} minute(s).",
                 "task_name": task_name,
                 "recipients": recipient_list,
                 "interval_minutes": interval_minutes,
@@ -85,11 +106,14 @@ class ScheduleEmailView(APIView):
 
 class EmailHistoryView(APIView):
     """
-    Email পাঠানোর history দেখার জন্য API
+    API endpoint for viewing email sending history.
+    
+    Returns the last 50 email logs with status, recipients,
+    and error information if any.
     """
     
     def get(self, request):
-        logs = EmailLog.objects.all()[:50]  # শেষ 50টি log
+        logs = EmailLog.objects.all()[:50]  # Last 50 logs
         
         data = [{
             "id": log.id,
@@ -110,7 +134,10 @@ class EmailHistoryView(APIView):
 
 class ScheduledEmailListView(APIView):
     """
-    Scheduled emails এর list দেখার জন্য
+    API endpoint for listing all active scheduled emails.
+    
+    Returns information about currently active scheduled tasks
+    including recipients, subject, and interval settings.
     """
     
     def get(self, request):
@@ -133,7 +160,15 @@ class ScheduledEmailListView(APIView):
 
 class SendImmediateEmailView(APIView):
     """
-    তৎক্ষণাৎ multiple emails এ mail পাঠানোর জন্য (without scheduling)
+    API endpoint for sending immediate emails to multiple recipients.
+    
+    Sends emails directly without scheduling, providing instant delivery.
+    Tracks success/failure for each recipient and logs the results.
+    
+    Request body:
+        - emails: List of recipient email addresses
+        - subject: Email subject line
+        - message: Email body content
     """
     
     def post(self, request):
@@ -146,16 +181,16 @@ class SendImmediateEmailView(APIView):
 
         if not recipient_list or not isinstance(recipient_list, list):
             return Response(
-                {"error": "Email list প্রয়োজন (array format এ)"},
+                {"error": "Email list is required (must be an array)"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Direct email পাঠাই (Celery ছাড়া)
+        # Send emails directly (without Celery)
         sent_count = 0
         failed_count = 0
         errors = []
         
-        # Email log তৈরি করি
+        # Create email log entry
         email_log = EmailLog.objects.create(
             subject=subject,
             message=message,
@@ -178,7 +213,7 @@ class SendImmediateEmailView(APIView):
                     failed_count += 1
                     errors.append(f"{recipient}: {str(e)}")
             
-            # Log update করি
+            # Update email log
             email_log.sent_count = sent_count
             email_log.failed_count = failed_count
             email_log.status = 'sent' if sent_count > 0 else 'failed'
@@ -188,7 +223,7 @@ class SendImmediateEmailView(APIView):
             
             return Response({
                 "status": "success",
-                "message": f"✅ {sent_count} টি email পাঠানো হয়েছে!",
+                "message": f"✅ {sent_count} email(s) sent successfully!",
                 "sent_count": sent_count,
                 "failed_count": failed_count,
                 "recipients": recipient_list,
