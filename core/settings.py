@@ -34,6 +34,12 @@ RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# CSRF Settings for production
+CSRF_TRUSTED_ORIGINS = [
+    'https://celer-scheduler-from-single-email.onrender.com',
+    'https://*.onrender.com',
+]
+
 
 # Application definition
 
