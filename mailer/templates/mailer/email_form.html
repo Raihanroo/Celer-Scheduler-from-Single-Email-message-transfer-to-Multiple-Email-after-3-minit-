@@ -158,16 +158,16 @@
 </head>
 <body>
     <div class="container">
-        <h1>📧 Email Scheduler</h1>
+        <h1>Email Scheduler</h1>
         <p class="subtitle">Multiple emails এ একসাথে mail পাঠান</p>
 
         <div class="info-box">
             <h3>কিভাবে ব্যবহার করবেন?</h3>
             <p>
-                ✅ Email addresses টাইপ করে Enter চাপুন<br>
-                ✅ Multiple emails যোগ করতে পারবেন<br>
-                ✅ "Schedule Email" - নির্দিষ্ট interval এ automatic mail<br>
-                ✅ "Send Now" - এখনই mail পাঠান
+                Email addresses টাইপ করে Enter চাপুন<br>
+                Multiple emails যোগ করতে পারবেন<br>
+                "Schedule Email" - নির্দিষ্ট interval এ automatic mail<br>
+                "Send Now" - এখনই mail পাঠান
             </p>
         </div>
 
@@ -195,10 +195,10 @@
 
             <div class="btn-group">
                 <button type="button" class="btn-schedule" onclick="scheduleEmail()">
-                    ⏰ Schedule Email
+                    Schedule Email
                 </button>
                 <button type="button" class="btn-immediate" onclick="sendImmediate()">
-                    🚀 Send Now
+                    Send Now
                 </button>
             </div>
         </form>
@@ -295,12 +295,12 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    showResponse(`✅ Success! ${emails.length} টি email এ প্রতি ${data.interval_minutes} মিনিট পর mail যাবে।`, 'success');
+                    showResponse(`Success! ${emails.length} টি email এ প্রতি ${data.interval_minutes} মিনিট পর mail যাবে।`, 'success');
                 } else {
-                    showResponse('❌ Error: ' + (result.error || 'Something went wrong'), 'error');
+                    showResponse('Error: ' + (result.error || 'Something went wrong'), 'error');
                 }
             } catch (error) {
-                showResponse('❌ Network error: ' + error.message, 'error');
+                showResponse('Network error: ' + error.message, 'error');
             }
         }
 
@@ -329,12 +329,12 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    showResponse(`✅ Success! ${emails.length} টি email এ mail পাঠানো হচ্ছে...`, 'success');
+                    showResponse(`Success! ${emails.length} টি email এ mail পাঠানো হচ্ছে...`, 'success');
                 } else {
-                    showResponse('❌ Error: ' + (result.error || 'Something went wrong'), 'error');
+                    showResponse('Error: ' + (result.error || 'Something went wrong'), 'error');
                 }
             } catch (error) {
-                showResponse('❌ Network error: ' + error.message, 'error');
+                showResponse('Network error: ' + error.message, 'error');
             }
         }
 
